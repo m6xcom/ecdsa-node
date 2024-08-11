@@ -1,7 +1,7 @@
 import { useState } from "react";
 import server from "./server";
 
-function Transfer({ address, setBalance }) {
+function Transfer({ address, setBalance, isVerified, setIsVerified }) {
   const [sendAmount, setSendAmount] = useState("");
   const [recipient, setRecipient] = useState("");
 
@@ -9,8 +9,17 @@ function Transfer({ address, setBalance }) {
 
   async function transfer(evt) {
     evt.preventDefault();
-
+    
     try {
+      if(!isVerified) {
+        const response = await server.post('/verify', { address });
+        if(response?.data?.signed) {
+          setIsVerified(true);
+        }else {
+          alert("Sign message before sending funds");
+          return;
+        }
+      }
       const {
         data: { balance },
       } = await server.post(`send`, {
@@ -20,7 +29,7 @@ function Transfer({ address, setBalance }) {
       });
       setBalance(balance);
     } catch (ex) {
-      alert(ex.response.data.message);
+      alert(ex.response.data.message || ex.response.data);
     }
   }
 
